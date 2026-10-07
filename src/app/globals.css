@@ -1,0 +1,234 @@
+@import "tailwindcss";
+
+/* Design tokens. DESIGN.md documents what each one is for; use the generated
+   utilities (bg-paper, text-ink, ring-line, rounded-control, shadow-panel ...)
+   rather than Tailwind's default palette. */
+@theme {
+  /* Surfaces */
+  --color-paper: #f6f5f1;
+  --color-card: #ffffff;
+  --color-sunken: #efede7;
+
+  /* Text and rules */
+  --color-ink: #121211;
+  --color-ink-hover: #2c2b29;
+  --color-ink-2: #3b3a37;
+  --color-mute: #6b6963;
+  --color-line: #e3e1da;
+  --color-line-strong: #cfccc3;
+
+  /* On dark (ink) surfaces */
+  --color-on-ink: #f6f5f1;
+  --color-on-ink-2: #c9c7c0;
+  --color-on-ink-mute: #a3a19a;
+  --color-ink-line: #3a3936;
+
+  /* Brand accent, used sparingly */
+  --color-accent: #e2482d;
+  --color-accent-soft: #fbe4de;
+
+  /* Semantic */
+  --color-blue: #2450d6;
+  --color-blue-soft: #e6ecfc;
+  --color-amber: #a15c00;
+  --color-amber-soft: #fbf0dc;
+  --color-green: #18794e;
+  --color-green-soft: #e1f3e9;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
+
+  --radius-control: 0.625rem;
+  --radius-card: 1rem;
+
+  --shadow-panel: 0 1px 0 rgb(18 18 17 / 0.04), 0 24px 48px -28px rgb(18 18 17 / 0.28);
+
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+@layer base {
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  :where(a, button, summary, input, select, textarea):focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Buttons. Size with utilities (h-9 px-3.5 text-sm) where the default is too big. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    height: 2.875rem;
+    padding: 0 1.25rem;
+    border-radius: var(--radius-control);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition:
+      background-color 0.2s var(--ease-smooth),
+      color 0.2s var(--ease-smooth),
+      border-color 0.2s var(--ease-smooth),
+      transform 0.2s var(--ease-smooth);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .btn-primary {
+    background: var(--color-ink);
+    color: var(--color-on-ink);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-ink-hover);
+  }
+
+  .btn-ghost {
+    border: 1px solid var(--color-line-strong);
+    color: var(--color-ink);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    border-color: var(--color-ink);
+  }
+
+  .btn-light {
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  .btn-light:hover:not(:disabled) {
+    background: var(--color-card);
+  }
+
+  .btn-arrow {
+    transition: transform 0.25s var(--ease-smooth);
+  }
+
+  .btn:hover .btn-arrow {
+    transform: translateX(3px);
+  }
+
+  /* Form fields */
+  .field {
+    width: 100%;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-control);
+    background: var(--color-card);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: var(--color-ink);
+    outline: none;
+    transition: border-color 0.2s var(--ease-smooth);
+  }
+
+  .field::placeholder {
+    color: var(--color-mute);
+  }
+
+  .field:focus {
+    border-color: var(--color-ink);
+  }
+
+  .field:disabled {
+    background: var(--color-sunken);
+  }
+
+  .field[aria-invalid="true"] {
+    border-color: var(--color-danger);
+  }
+
+  .alert-danger {
+    border: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent);
+    border-radius: var(--radius-control);
+    background: var(--color-danger-soft);
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    color: var(--color-danger);
+  }
+
+  /* Surfaces */
+  .card {
+    background: var(--color-card);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+  }
+
+  .panel {
+    background: var(--color-card);
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-panel);
+  }
+
+  /* Type */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--color-mute);
+  }
+
+  .eyebrow::before {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    background: var(--color-accent);
+  }
+
+  .type-display {
+    font-size: clamp(2.5rem, 4.6vw, 4rem);
+    line-height: 0.96;
+    letter-spacing: -0.045em;
+    font-weight: 600;
+  }
+
+  .type-heading {
+    font-size: clamp(2rem, 4vw, 3.25rem);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    font-weight: 600;
+  }
+
+  .type-title {
+    font-size: 1.625rem;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+  }
+
+  .type-meta {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-mute);
+  }
+}

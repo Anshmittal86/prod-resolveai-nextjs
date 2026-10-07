@@ -1,0 +1,388 @@
+/* Landing page motion and illustration styles. Tokens, buttons, cards and
+   type live in globals.css; see DESIGN.md. No gradients or glows. */
+
+/* Scroll reveal: Reveal adds .is-in once the element is on screen. */
+.lp-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.8s var(--ease-smooth),
+    transform 0.8s var(--ease-smooth);
+  transition-delay: var(--d, 0ms);
+}
+
+.lp-reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Hero headline: each line rises out of its own mask. */
+.lp-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+}
+
+.lp-line > span {
+  display: block;
+  animation: lp-rise 1s var(--ease-smooth) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes lp-rise {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.lp-fade-up {
+  animation: lp-fade-up 0.9s var(--ease-smooth) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes lp-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Chat demo */
+.lp-msg {
+  animation: lp-msg-in 0.55s var(--ease-smooth) both;
+}
+
+@keyframes lp-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lp-typing span {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-mute);
+  animation: lp-typing 1s infinite ease-in-out;
+}
+
+.lp-typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.lp-typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes lp-typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: none;
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+.lp-row-in {
+  animation: lp-row-in 0.7s var(--ease-smooth) both;
+}
+
+@keyframes lp-row-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+    background: var(--color-accent-soft);
+  }
+  40% {
+    background: var(--color-accent-soft);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lp-flash {
+  animation: lp-flash 1.6s var(--ease-smooth) both;
+}
+
+@keyframes lp-flash {
+  from {
+    background: var(--color-accent-soft);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+.lp-progress {
+  transform-origin: left;
+  animation: lp-progress linear both;
+  animation-duration: var(--t, 1s);
+}
+
+@keyframes lp-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Feature: grounded answers, a highlight sweeps the policy line it cites. */
+.lp-cite {
+  position: relative;
+}
+
+.lp-cite::after {
+  content: "";
+  position: absolute;
+  inset: -3px -4px;
+  background: var(--color-accent-soft);
+  border-left: 2px solid var(--color-accent);
+  z-index: -1;
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
+.is-in .lp-cite::after {
+  animation: lp-cite 5s var(--ease-smooth) infinite;
+}
+
+@keyframes lp-cite {
+  0%,
+  8% {
+    transform: scaleX(0);
+  }
+  28%,
+  82% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+/* Feature: ticket fields fill in one after another. */
+.lp-field {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.is-in .lp-field {
+  animation: lp-fade-up 0.6s var(--ease-smooth) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* Feature: lifecycle marker steps through the four statuses. */
+.lp-track-fill {
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
+.is-in .lp-track-fill {
+  animation: lp-track 8s var(--ease-smooth) infinite;
+}
+
+@keyframes lp-track {
+  0%,
+  10% {
+    transform: scaleX(0);
+  }
+  25%,
+  35% {
+    transform: scaleX(0.3333);
+  }
+  50%,
+  60% {
+    transform: scaleX(0.6667);
+  }
+  75%,
+  92% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(0);
+  }
+}
+
+.lp-node {
+  background: var(--color-card);
+  border: 1.5px solid var(--color-line-strong);
+  transition: none;
+}
+
+.is-in .lp-node {
+  animation: lp-node 8s var(--ease-smooth) infinite;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes lp-node {
+  0%,
+  4% {
+    background: var(--color-card);
+    border-color: var(--color-line-strong);
+  }
+  8%,
+  92% {
+    background: var(--color-ink);
+    border-color: var(--color-ink);
+  }
+  100% {
+    background: var(--color-card);
+    border-color: var(--color-line-strong);
+  }
+}
+
+/* Feature: notification emails stack in. */
+.lp-mail {
+  opacity: 0;
+}
+
+.is-in .lp-mail {
+  animation: lp-mail 6s var(--ease-smooth) infinite;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes lp-mail {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  10%,
+  80% {
+    opacity: 1;
+    transform: none;
+  }
+  92%,
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
+
+/* Workflow diagram: a packet travels each connector. */
+.lp-wire {
+  stroke-dasharray: 3 5;
+}
+
+.is-in .lp-wire {
+  animation: lp-dash 1.2s linear infinite;
+}
+
+@keyframes lp-dash {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+.lp-packet {
+  offset-rotate: 0deg;
+  opacity: 0;
+}
+
+.is-in .lp-packet {
+  animation: lp-packet var(--t, 3s) var(--ease-smooth) infinite;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes lp-packet {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+/* Marquee of ticket categories */
+.lp-marquee {
+  display: flex;
+  width: max-content;
+  animation: lp-marquee 40s linear infinite;
+}
+
+.lp-marquee-wrap:hover .lp-marquee {
+  animation-play-state: paused;
+}
+
+@keyframes lp-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* FAQ */
+.lp-faq summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.lp-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.lp-faq .lp-plus {
+  transition: transform 0.3s var(--ease-smooth);
+}
+
+.lp-faq[open] .lp-plus {
+  transform: rotate(45deg);
+}
+
+/* Reduced motion: no animation, every graphic shown in its settled state. */
+@media (prefers-reduced-motion: reduce) {
+  .lp *,
+  .lp *::before,
+  .lp *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .lp-reveal,
+  .lp-field,
+  .lp-mail {
+    opacity: 1;
+    transform: none;
+  }
+
+  .lp-track-fill,
+  .lp-cite::after {
+    transform: none;
+  }
+
+  .lp-node {
+    background: var(--color-ink);
+    border-color: var(--color-ink);
+  }
+
+  .lp-packet {
+    display: none;
+  }
+}
