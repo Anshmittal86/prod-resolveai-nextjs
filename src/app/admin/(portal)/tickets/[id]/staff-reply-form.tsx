@@ -24,19 +24,19 @@ const MODES: Record<
   }
 > = {
   reply: {
-    tab: "Public Reply",
-    selectedTab: "bg-ink text-on-ink",
+    tab: "Public reply",
+    selectedTab: "bg-card text-ink ring-1 ring-line-strong",
     placeholder: "Reply to the customer. They'll also get an email...",
     submit: "Send reply",
-    box: "bg-card",
+    box: "border-line bg-card",
     button: "bg-ink hover:bg-ink-hover",
   },
   note: {
-    tab: "Internal Note",
-    selectedTab: "bg-amber text-on-ink",
+    tab: "Internal note",
+    selectedTab: "bg-amber text-on-ink ring-1 ring-amber",
     placeholder: "Add a note for the support team. The customer won't see it...",
     submit: "Add note",
-    box: "bg-amber-soft",
+    box: "border-amber/30 bg-amber-soft",
     button: "bg-amber hover:bg-amber/90",
   },
 };
@@ -97,9 +97,13 @@ export function StaffReplyForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className={`rounded-card p-4 ring-1 ring-line ${mode.box}`}
+      className={`rounded-card border p-4 transition-colors duration-200 ${mode.box}`}
     >
-      <div role="group" aria-label="Message type" className="mb-3 flex gap-2">
+      <div
+        role="group"
+        aria-label="Message type"
+        className="mb-3 inline-flex gap-1 rounded-control bg-sunken p-1"
+      >
         {(Object.keys(MODES) as StaffMessageKind[]).map((option) => {
           const selected = option === kind;
           const disabled = pending || (option === "reply" && !acceptsReplies);
@@ -110,10 +114,8 @@ export function StaffReplyForm({
               aria-pressed={selected}
               disabled={disabled}
               onClick={() => setKind(option)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                selected
-                  ? MODES[option].selectedTab
-                  : "bg-sunken text-ink-2 hover:bg-line"
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                selected ? MODES[option].selectedTab : "text-mute hover:text-ink"
               }`}
             >
               {MODES[option].tab}
@@ -129,7 +131,7 @@ export function StaffReplyForm({
       {error && (
         <p
           role="alert"
-          className="mb-3 alert-danger"
+          className="alert-danger mb-3"
         >
           {error}
         </p>
@@ -148,7 +150,7 @@ export function StaffReplyForm({
           maxLength={MAX_MESSAGE_LENGTH}
           placeholder={mode.placeholder}
           disabled={pending}
-          className="max-h-60 flex-1 resize-none field field-sizing-content"
+          className="field field-sizing-content max-h-60 flex-1 resize-none"
         />
         <button
           type="submit"

@@ -15,23 +15,22 @@ import { changeTicketStatus, triageTicket } from "./actions";
 const QUICK_ACTIONS: { status: TicketStatus; label: string; className: string }[] = [
   {
     status: "in_progress",
-    label: "Mark In Progress",
+    label: "Mark in progress",
     className: "bg-amber-soft text-amber ring-amber/25 hover:bg-amber/15",
   },
   {
     status: "resolved",
-    label: "Resolve Ticket",
+    label: "Resolve",
     className: "bg-green-soft text-green ring-green/25 hover:bg-green/15",
   },
   {
     status: "closed",
-    label: "Close Ticket",
-    className: "bg-sunken text-ink-2 ring-line-strong hover:bg-line",
+    label: "Close",
+    className: "bg-card text-ink-2 ring-line-strong hover:ring-ink",
   },
 ];
 
-const SELECT_CLASS =
-  "field mt-1 px-3 py-2";
+const SELECT_CLASS = "field mt-1.5 h-10 px-3 py-0";
 
 // Every control saves as soon as it is used; the page refreshes with the
 // saved values, so the selects stay controlled by the server's copy.
@@ -71,16 +70,14 @@ export function TicketControls({
     <section
       aria-label="Manage ticket"
       aria-busy={pending}
-      className="h-fit rounded-card bg-card p-5 ring-1 ring-line"
+      className="card h-fit p-5"
     >
-      <h2 className="type-meta">
-        Manage ticket
-      </h2>
+      <h2 className="type-meta">Manage ticket</h2>
 
       {error && (
         <p
           role="alert"
-          className="mt-3 alert-danger px-3"
+          className="alert-danger mt-3 px-3"
         >
           {error}
         </p>
@@ -99,7 +96,7 @@ export function TicketControls({
                 type="button"
                 disabled={pending}
                 onClick={() => setStatus(status)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 ring-inset transition disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+                className={`btn h-8 px-3 text-xs ring-1 ring-inset ${className}`}
               >
                 {label}
               </button>
@@ -108,9 +105,9 @@ export function TicketControls({
         </div>
       )}
 
-      <div className="mt-4 space-y-3 text-sm">
+      <div className="mt-5 space-y-4 border-t border-line pt-4 text-sm">
         <label className="block">
-          <span className="text-mute">Status</span>
+          <span className="type-meta">Status</span>
           <select
             value={ticket.status}
             disabled={pending || closed}
@@ -126,7 +123,7 @@ export function TicketControls({
         </label>
 
         <label className="block">
-          <span className="text-mute">Priority</span>
+          <span className="type-meta">Priority</span>
           <select
             value={ticket.priority}
             disabled={pending}
@@ -144,7 +141,7 @@ export function TicketControls({
         </label>
 
         <label className="block">
-          <span className="text-mute">Category</span>
+          <span className="type-meta">Category</span>
           <select
             value={ticket.category}
             disabled={pending}
@@ -162,7 +159,7 @@ export function TicketControls({
         </label>
 
         <label className="block">
-          <span className="text-mute">Assigned to</span>
+          <span className="type-meta">Assigned to</span>
           <select
             value={ticket.assignedToId ?? ""}
             disabled={pending}

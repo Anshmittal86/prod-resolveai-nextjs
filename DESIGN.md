@@ -161,6 +161,8 @@ Shared React components:
 | `StatusBadge`, `PriorityIndicator`, `CategoryPill` | [`src/components/tickets/ticket-badges.tsx`](src/components/tickets/ticket-badges.tsx) |
 | `FormField`, `FormAlert`, `SubmitButton` | [`src/components/auth/form-controls.tsx`](src/components/auth/form-controls.tsx) |
 | `Reveal` (scroll-triggered `is-in` class) | [`src/components/landing/reveal.tsx`](src/components/landing/reveal.tsx) |
+| `Loader`, `PageLoader` | [`src/components/loader.tsx`](src/components/loader.tsx) |
+| `SiteHeader` (customer), `StaffHeader` (staff portal) | [`src/components/site-header.tsx`](src/components/site-header.tsx), [`src/components/staff-header.tsx`](src/components/staff-header.tsx) |
 
 ## Motion
 
@@ -184,6 +186,33 @@ Rules:
 - Respect `prefers-reduced-motion`: animations are switched off and every graphic is shown in its finished state. Content never relies on motion to be understood.
 - Content hidden for a reveal must still be visible without JavaScript (see the `<noscript>` rule on the landing page).
 - No parallax, scroll-jacking, cursor followers, confetti or bouncing CTAs.
+
+## Loading states
+
+Every route segment has a `loading.tsx` that renders the shared loader, so
+navigation always gets the same feedback.
+
+| Pattern | Detail |
+| --- | --- |
+| The mark | The logo assembles itself in a 2s loop: the outline is traced in `ink` (0–35%), the square fills (30–45%), the check draws in `accent` (40–65%), it holds, then it fades out and scales to 94%. |
+| Progress bar | A 120px `line` track with an `ink` segment sweeping across every 1.2s. |
+| Label | `type-meta` text naming what is loading ("Loading queue", "Loading ticket", "Opening chat"). Defaults to "Loading". |
+| Delay | Fades in after 150ms, so fast navigations never flash it. |
+| Placement | `loading.tsx` sits inside the segment's layout, so headers stay in place and only the content area is replaced. Auth pages show it inside the card. |
+| Accessibility | `role="status"` with `aria-live="polite"`. Reduced motion shows the finished logo and label, without the bar. |
+
+Use `PageLoader` for a full content area and `Loader` inside an existing
+surface. Do not use generic spinners, skeleton shimmer gradients or other
+loaders.
+
+## Staff portal
+
+Staff screens use the same tokens and components as customer screens.
+
+- The staff sign-in (`/admin/login`) mirrors the customer sign-in: `paper` background, a `panel` card, and the logo with a "Staff portal" tag.
+- Signed-in screens share `StaffHeader`, a sticky `paper` header with the logo, a "Staff" tag, the user's initial, name and role, and a ghost sign-out button.
+- Page heads use `eyebrow` + `type-title`. Metrics are a single hairline-divided strip with a semantic dot on each label. The queue is a `card` with a toolbar (`type-meta` filter labels, `field` selects, primary and ghost buttons) above a table with `type-meta` headers.
+- On the ticket page, the escalation reason has an `accent` left rule, and the conversation sits on a `paper` thread inside a `card`. The reply box switches between "Public reply" (card) and "Internal note" (`amber-soft`) with a segmented control.
 
 ## Illustration
 

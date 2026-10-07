@@ -44,35 +44,51 @@ export default async function StaffTicketPage({
   const { ticket, customer, messages } = detail;
 
   return (
-    <main className="flex-1 bg-paper px-4 py-8 sm:px-6">
+    <main className="flex-1 px-4 py-10 sm:px-6 lg:py-14">
       <div className="mx-auto max-w-6xl">
         <Link
           href="/admin"
-          className="text-sm font-medium text-mute hover:text-ink"
+          className="group inline-flex items-center gap-2 text-sm font-medium text-mute hover:text-ink"
         >
-          ← Back to dashboard
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            aria-hidden
+            className="transition-transform duration-200 ease-smooth group-hover:-translate-x-0.5"
+          >
+            <path d="M14 8H3M7 4 3 8l4 4" stroke="currentColor" strokeWidth="1.6" />
+          </svg>
+          Back to dashboard
         </Link>
 
         <TicketSummary ticket={ticket} />
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_18rem]">
           <div className="min-w-0 space-y-4">
-            <section
-              aria-label="Conversation"
-              className="space-y-4 rounded-card bg-card p-5 ring-1 ring-line"
-            >
-              <h2 className="text-lg font-semibold text-ink">Conversation</h2>
-              {messages.length === 0 ? (
-                <p className="text-center text-sm text-mute">No messages yet.</p>
-              ) : (
-                messages.map((message) => (
-                  <TranscriptMessage
-                    key={message.id}
-                    message={message}
-                    customerName={customer.name}
-                  />
-                ))
-              )}
+            <section aria-labelledby="conversation-heading" className="card overflow-hidden">
+              <div className="flex items-center justify-between border-b border-line px-5 py-4">
+                <h2 id="conversation-heading" className="text-[17px] font-semibold tracking-tight">
+                  Conversation
+                </h2>
+                <span className="type-meta">
+                  {messages.length} {messages.length === 1 ? "message" : "messages"}
+                </span>
+              </div>
+              <div className="space-y-5 bg-paper p-5">
+                {messages.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-mute">No messages yet.</p>
+                ) : (
+                  messages.map((message) => (
+                    <TranscriptMessage
+                      key={message.id}
+                      message={message}
+                      customerName={customer.name}
+                    />
+                  ))
+                )}
+              </div>
             </section>
             <StaffReplyForm
               ticketId={ticket.id}
@@ -92,17 +108,17 @@ export default async function StaffTicketPage({
 
 function TicketSummary({ ticket }: { ticket: StaffTicket }) {
   return (
-    <header className="mt-4 rounded-card bg-card p-5 ring-1 ring-line">
+    <header className="card mt-6 p-6">
       <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-mute">Ticket #{ticket.id}</p>
-          <h1 className="mt-0.5 text-xl font-semibold tracking-tight wrap-break-word text-ink">
+          <p className="font-mono text-[11px] text-mute">Ticket #{ticket.id}</p>
+          <h1 className="type-title mt-1 wrap-break-word">
             {ticket.subject}
           </h1>
         </div>
         <StatusBadge status={ticket.status} />
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
         <CategoryPill category={ticket.category} />
         <PriorityIndicator priority={ticket.priority} />
         <span className="text-xs text-mute">
@@ -112,11 +128,9 @@ function TicketSummary({ ticket }: { ticket: StaffTicket }) {
           <LocalDate date={ticket.updatedAt} prefix="Updated " withTime />
         </span>
       </div>
-      <div className="mt-4 rounded-control bg-paper p-4">
-        <h2 className="type-meta">
-          Escalation reason
-        </h2>
-        <p className="mt-1 whitespace-pre-wrap wrap-break-word text-sm text-ink-2">
+      <div className="mt-5 rounded-control border-l-2 border-accent bg-paper px-4 py-3">
+        <h2 className="type-meta">Escalation reason</h2>
+        <p className="mt-1.5 whitespace-pre-wrap wrap-break-word text-sm leading-relaxed text-ink-2">
           {ticket.escalationReason ?? "No reason was recorded."}
         </p>
       </div>
@@ -128,30 +142,36 @@ function CustomerProfile({ customer }: { customer: StaffTicketCustomer }) {
   return (
     <aside
       aria-label="Customer"
-      className="h-fit rounded-card bg-card p-5 ring-1 ring-line"
+      className="card h-fit p-5"
     >
-      <h2 className="type-meta">
-        Customer
-      </h2>
-      <p className="mt-2 font-semibold wrap-break-word text-ink">{customer.name}</p>
-      <a
-        href={`mailto:${customer.email}`}
-        className="text-sm break-all text-mute hover:text-ink hover:underline"
-      >
-        {customer.email}
-      </a>
-      <dl className="mt-4 space-y-3 text-sm">
-        <div>
+      <h2 className="type-meta">Customer</h2>
+      <div className="mt-3 flex items-center gap-3">
+        <span
+          aria-hidden
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sunken text-sm font-semibold text-ink-2"
+        >
+          {(customer.name || customer.email).charAt(0).toUpperCase()}
+        </span>
+        <div className="min-w-0">
+          <p className="font-semibold wrap-break-word">{customer.name}</p>
+          <a
+            href={`mailto:${customer.email}`}
+            className="block text-sm break-all text-mute hover:text-ink hover:underline"
+          >
+            {customer.email}
+          </a>
+        </div>
+      </div>
+      <dl className="mt-5 divide-y divide-line border-t border-line text-sm">
+        <div className="flex items-center justify-between py-2.5">
           <dt className="text-mute">Registered</dt>
-          <dd className="font-medium text-ink">
+          <dd className="font-medium">
             <LocalDate date={customer.createdAt} />
           </dd>
         </div>
-        <div>
+        <div className="flex items-center justify-between py-2.5">
           <dt className="text-mute">Previous tickets</dt>
-          <dd className="font-medium text-ink">
-            {customer.previousTicketCount}
-          </dd>
+          <dd className="font-medium tabular-nums">{customer.previousTicketCount}</dd>
         </div>
       </dl>
     </aside>
@@ -160,7 +180,7 @@ function CustomerProfile({ customer }: { customer: StaffTicketCustomer }) {
 
 // System messages render as centred notes rather than bubbles.
 const BUBBLES: Record<Exclude<SenderType, "system">, string> = {
-  customer: "rounded-bl-md bg-sunken text-ink",
+  customer: "rounded-bl-md bg-card text-ink ring-1 ring-line-strong",
   ai: "rounded-br-md bg-card text-ink-2 ring-1 ring-line",
   agent: "rounded-br-md bg-blue-soft text-ink ring-1 ring-blue/20",
 };
@@ -201,8 +221,8 @@ function TranscriptMessage({
     <div className={`flex flex-col ${fromCustomer ? "items-start" : "items-end"}`}>
       <p className="mb-1 flex flex-wrap items-center gap-2 px-1 text-xs text-mute">
         {message.isInternal && (
-          <span className="rounded-full bg-amber-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber ring-1 ring-amber/30">
-            Internal Note - Only Staff Can See
+          <span className="rounded-full bg-amber-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-amber ring-1 ring-amber/30">
+            Internal note · Staff only
           </span>
         )}
         <span className="font-medium text-ink-2">{label}</span>

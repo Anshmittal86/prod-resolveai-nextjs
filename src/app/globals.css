@@ -232,3 +232,140 @@
     color: var(--color-mute);
   }
 }
+
+/* Loader (src/components/loader.tsx). Waits 150ms before appearing so fast
+   navigations never flash it, then loops a 2s "resolve" of the logo. */
+@layer components {
+  .loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    animation: loader-in 0.3s var(--ease-smooth) 0.15s both;
+  }
+
+  .loader-mark {
+    overflow: visible;
+    animation: loader-cycle 2s var(--ease-smooth) infinite;
+  }
+
+  .loader-outline {
+    stroke: var(--color-ink);
+    stroke-width: 2;
+    stroke-dasharray: 100;
+    animation: loader-trace 2s var(--ease-smooth) infinite;
+  }
+
+  .loader-fill {
+    fill: var(--color-ink);
+    animation: loader-fill 2s var(--ease-smooth) infinite;
+  }
+
+  .loader-check {
+    stroke: var(--color-accent);
+    stroke-width: 3.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 100;
+    animation: loader-check 2s var(--ease-smooth) infinite;
+  }
+
+  .loader-track {
+    position: relative;
+    width: 7.5rem;
+    height: 1px;
+    overflow: hidden;
+    background: var(--color-line);
+  }
+
+  .loader-bar {
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    background: var(--color-ink);
+    animation: loader-sweep 1.2s var(--ease-smooth) infinite;
+  }
+}
+
+@keyframes loader-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes loader-trace {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  35%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes loader-fill {
+  0%,
+  30% {
+    opacity: 0;
+  }
+  45%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes loader-check {
+  0%,
+  40% {
+    stroke-dashoffset: 100;
+  }
+  65%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes loader-cycle {
+  0%,
+  82% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+@keyframes loader-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader,
+  .loader-mark,
+  .loader-outline,
+  .loader-fill,
+  .loader-check {
+    animation: none;
+  }
+
+  .loader-outline,
+  .loader-check {
+    stroke-dashoffset: 0;
+  }
+
+  .loader-track {
+    display: none;
+  }
+}

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LocalDate } from "@/components/local-date";
-import { SignOutButton } from "@/components/sign-out-button";
 import {
   CategoryPill,
   PriorityIndicator,
@@ -35,33 +34,36 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
     getQueueMetrics(),
     listQueueTickets(filters),
   ]);
+  const filtered = Object.keys(filters).length > 0;
 
   return (
-    <main className="flex-1 bg-paper px-4 py-8 sm:px-6">
+    <main className="flex-1 px-4 py-10 sm:px-6 lg:py-14">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="type-title">Support Dashboard</h1>
-            <p className="mt-1 text-sm text-mute">
-              Signed in as {user.name} ({user.role}).
-            </p>
-          </div>
-          <SignOutButton redirectTo="/admin/login" />
+        <div>
+          <p className="eyebrow">Support queue</p>
+          <h1 className="type-title mt-3">Support Dashboard</h1>
+          <p className="mt-2 text-sm text-mute">
+            Signed in as {user.name} ({user.role}).
+          </p>
         </div>
 
         <MetricCards metrics={metrics} />
 
-        <section className="mt-6 overflow-hidden rounded-card bg-card ring-1 ring-line">
-          <div className="flex flex-col gap-4 border-b border-line p-5 lg:flex-row lg:items-end lg:justify-between">
-            <h2 className="text-lg font-semibold text-ink">Tickets</h2>
+        <section aria-labelledby="queue-heading" className="card mt-6 overflow-hidden">
+          <div className="flex flex-col gap-4 border-b border-line px-5 py-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 id="queue-heading" className="text-[17px] font-semibold tracking-tight">
+                Tickets
+              </h2>
+              <p className="mt-0.5 text-sm text-mute">
+                {queue.length} {queue.length === 1 ? "ticket" : "tickets"}
+                {filtered ? " match these filters" : " in the queue"}
+              </p>
+            </div>
             <FilterForm filters={filters} />
           </div>
           {queue.length === 0 ? (
-            <p className="px-5 py-12 text-center text-sm text-mute">
-              {Object.keys(filters).length > 0
-                ? "No tickets match these filters."
-                : "No tickets yet."}
-            </p>
+            <EmptyQueue filtered={filtered} />
           ) : (
             <QueueTable tickets={queue} />
           )}
@@ -73,20 +75,20 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
 
 function MetricCards({ metrics }: { metrics: QueueMetrics }) {
   const cards = [
-    { label: "Total Tickets", value: metrics.total },
-    { label: "Open Tickets", value: metrics.open },
-    { label: "High/Critical Tickets", value: metrics.highOrCritical },
-    { label: "Resolved Tickets", value: metrics.resolved },
+    { label: "Total tickets", value: metrics.total, dot: "bg-ink" },
+    { label: "Open", value: metrics.open, dot: "bg-blue" },
+    { label: "High or critical", value: metrics.highOrCritical, dot: "bg-accent" },
+    { label: "Resolved", value: metrics.resolved, dot: "bg-green" },
   ];
   return (
-    <dl className="grid grid-cols-2 gap-4 md:grid-cols-4">
-      {cards.map(({ label, value }) => (
-        <div
-          key={label}
-          className="rounded-card bg-card p-5 ring-1 ring-line"
-        >
-          <dt className="text-sm text-mute">{label}</dt>
-          <dd className="mt-1 text-3xl font-semibold tracking-tight text-ink">{value}</dd>
+    <dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line md:grid-cols-4">
+      {cards.map(({ label, value, dot }) => (
+        <div key={label} className="bg-card px-5 py-5">
+          <dt className="type-meta flex items-center gap-2">
+            <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+            {label}
+          </dt>
+          <dd className="mt-2 text-3xl font-semibold tracking-tight tabular-nums">{value}</dd>
         </div>
       ))}
     </dl>
@@ -119,16 +121,10 @@ function FilterForm({ filters }: { filters: QueueFilters }) {
         value={filters.category}
         options={TICKET_CATEGORIES.map((c) => [c, categoryLabel(c)])}
       />
-      <button
-        type="submit"
-        className="btn btn-primary h-10 px-4 text-sm"
-      >
+      <button type="submit" className="btn btn-primary h-10 px-4 text-sm">
         Apply
       </button>
-      <Link
-        href="/admin"
-        className="rounded-control px-3 py-2 text-sm font-medium text-mute hover:bg-sunken"
-      >
+      <Link href="/admin" className="btn btn-ghost h-10 px-4 text-sm">
         Clear
       </Link>
     </form>
@@ -147,12 +143,12 @@ function FilterSelect({
   options: [value: string, label: string][];
 }) {
   return (
-    <label className="flex flex-col gap-1 text-xs font-medium text-mute">
-      {label}
+    <label className="flex flex-col gap-1.5">
+      <span className="type-meta">{label}</span>
       <select
         name={name}
         defaultValue={value ?? ""}
-        className="field px-3 py-2"
+        className="field h-10 min-w-32 px-3 py-0"
       >
         <option value="">All</option>
         {options.map(([optionValue, optionLabel]) => (
@@ -165,48 +161,61 @@ function FilterSelect({
   );
 }
 
+function EmptyQueue({ filtered }: { filtered: boolean }) {
+  return (
+    <div className="px-5 py-16 text-center">
+      <p className="font-medium">{filtered ? "No tickets match these filters." : "No tickets yet."}</p>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-mute">
+        {filtered
+          ? "Try a different status, priority or category, or clear the filters."
+          : "Tickets appear here when the assistant escalates a conversation."}
+      </p>
+    </div>
+  );
+}
+
 function QueueTable({ tickets }: { tickets: QueueTicket[] }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
-        <thead className="bg-paper type-meta">
+      <table className="w-full min-w-[760px] text-left text-sm">
+        <thead className="type-meta border-b border-line bg-paper">
           <tr>
-            <th className="px-5 py-3 font-medium">Ticket</th>
-            <th className="px-5 py-3 font-medium">Customer</th>
-            <th className="px-5 py-3 font-medium">Category</th>
-            <th className="px-5 py-3 font-medium">Priority</th>
-            <th className="px-5 py-3 font-medium">Status</th>
-            <th className="px-5 py-3 font-medium">Created</th>
+            <th className="px-5 py-3 font-normal">Ticket</th>
+            <th className="px-5 py-3 font-normal">Customer</th>
+            <th className="px-5 py-3 font-normal">Category</th>
+            <th className="px-5 py-3 font-normal">Priority</th>
+            <th className="px-5 py-3 font-normal">Status</th>
+            <th className="px-5 py-3 font-normal">Created</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-line">
           {tickets.map((ticket) => (
             // The subject link stretches over the whole row, so any cell opens
             // the ticket.
-            <tr key={ticket.id} className="relative hover:bg-paper">
-              <td className="max-w-xs px-5 py-3">
-                <p className="text-xs text-mute">#{ticket.id}</p>
+            <tr key={ticket.id} className="relative transition-colors hover:bg-paper">
+              <td className="max-w-xs px-5 py-3.5">
+                <p className="font-mono text-[11px] text-mute">#{ticket.id}</p>
                 <Link
                   href={`/admin/tickets/${ticket.id}`}
-                  className="block truncate font-medium text-ink after:absolute after:inset-0"
+                  className="block truncate font-medium after:absolute after:inset-0"
                 >
                   {ticket.subject}
                 </Link>
               </td>
-              <td className="px-5 py-3">
-                <p className="font-medium text-ink">{ticket.customerName}</p>
+              <td className="px-5 py-3.5">
+                <p className="font-medium">{ticket.customerName}</p>
                 <p className="text-mute">{ticket.customerEmail}</p>
               </td>
-              <td className="px-5 py-3">
+              <td className="px-5 py-3.5">
                 <CategoryPill category={ticket.category} />
               </td>
-              <td className="px-5 py-3">
+              <td className="px-5 py-3.5">
                 <PriorityIndicator priority={ticket.priority} />
               </td>
-              <td className="px-5 py-3">
+              <td className="px-5 py-3.5">
                 <StatusBadge status={ticket.status} />
               </td>
-              <td className="whitespace-nowrap px-5 py-3 text-mute">
+              <td className="whitespace-nowrap px-5 py-3.5 text-mute">
                 <LocalDate date={ticket.createdAt} />
               </td>
             </tr>
