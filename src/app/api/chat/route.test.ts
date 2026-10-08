@@ -1,17 +1,17 @@
-import {
-  GenerateContentResponse,
-  type Content,
-  type GenerateContentParameters,
-  type Part,
-} from "@google/genai";
+import type {
+  Response as ModelResponse,
+  ResponseCreateParamsNonStreaming,
+  ResponseFunctionToolCall,
+  ResponseInputItem,
+} from "openai/resources/responses/responses";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { messages, tickets, user } from "@/db/schema";
 import { SUPPORT_SYSTEM_INSTRUCTION } from "@/lib/knowledge-base";
 
 const getSession = vi.hoisted(() => vi.fn());
-const generateContent = vi.hoisted(() =>
-  vi.fn<(params: GenerateContentParameters) => Promise<GenerateContentResponse>>(),
+const createResponse = vi.hoisted(() =>
+  vi.fn<(params: ResponseCreateParamsNonStreaming) => Promise<ModelResponse>>(),
 );
 const sendEmail = vi.hoisted(() => vi.fn());
 // Work the route defers with after(), run by runAfterResponse().
@@ -28,9 +28,9 @@ vi.mock("resend", () => ({
   },
 }));
 vi.mock("@/lib/auth", () => ({ auth: { api: { getSession } } }));
-vi.mock("@/lib/gemini", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/gemini")>()),
-  getGeminiClient: () => ({ models: { generateContent } }),
+vi.mock("@/lib/openai", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/openai")>()),
+  getOpenAIClient: () => ({ responses: { create: createResponse } }),
 }));
 // A real Postgres (in-memory PGlite) with the app's migrations applied stands
 // in for Neon, so ticket writes are checked against the actual schema.
@@ -63,8 +63,15 @@ const ticketArgs = {
   escalationReason: "Customer was charged twice and wants the duplicate refunded.",
 };
 
-function createTicketCall(args: Record<string, unknown> = ticketArgs): Part {
-  return { functionCall: { id: "call-1", name: "create_ticket", args } };
+function createTicketCall(
+  args: Record<string, unknown> = ticketArgs,
+): ResponseFunctionToolCall {
+  return {
+    type: "function_call",
+    call_id: "call-1",
+    name: "create_ticket",
+    arguments: JSON.stringify(args),
+  };
 }
 
 async function allTickets() {
@@ -75,10 +82,31 @@ function signInAs(user: { id: string; role: string } | null) {
   getSession.mockResolvedValue(user ? { user, session: {} } : null);
 }
 
-function modelReply(...parts: Part[]): GenerateContentResponse {
-  const response = new GenerateContentResponse();
-  response.candidates = [{ content: { role: "model", parts } }];
-  return response;
+// A text answer, or a tool call the route must execute. Only the fields the
+// runner reads are filled in.
+function modelReply(
+  reply: { text: string } | ResponseFunctionToolCall,
+): ModelResponse {
+  if ("type" in reply) return { output: [reply], output_text: "" } as unknown as ModelResponse;
+  return {
+    output: [
+      {
+        type: "message",
+        id: "msg-1",
+        role: "assistant",
+        status: "completed",
+        content: [{ type: "output_text", text: reply.text, annotations: [] }],
+      },
+    ],
+    output_text: reply.text,
+  } as unknown as ModelResponse;
+}
+
+// The last function_call_output the route sent back, parsed.
+function lastToolOutput(callIndex: number): unknown {
+  const input = createResponse.mock.calls[callIndex][0].input as ResponseInputItem[];
+  const output = input.at(-1) as ResponseInputItem.FunctionCallOutput;
+  return JSON.parse(output.output as string);
 }
 
 function chatRequest(body: unknown): Request {
@@ -99,7 +127,7 @@ function sentEmails(): { to: string; subject: string }[] {
 
 beforeEach(async () => {
   getSession.mockReset();
-  generateContent.mockReset();
+  createResponse.mockReset();
   sendEmail.mockReset();
   sendEmail.mockResolvedValue({ data: { id: "email-1" }, error: null, headers: null });
   afterResponse.length = 0;
@@ -117,7 +145,7 @@ afterEach(() => {
 describe("POST /api/chat", () => {
   it("answers an FAQ turn directly, grounded in the support knowledge base", async () => {
     signInAs(customer);
-    generateContent.mockResolvedValue(
+    createResponse.mockResolvedValue(
       modelReply({ text: "You can return items within 30 days of delivery." }),
     );
 
@@ -135,17 +163,17 @@ describe("POST /api/chat", () => {
     expect(await response.json()).toEqual({
       reply: "You can return items within 30 days of delivery.",
     });
-    expect(generateContent).toHaveBeenCalledOnce();
-    const request = generateContent.mock.calls[0][0];
-    expect(request.contents).toEqual([
-      { role: "user", parts: [{ text: "Hi" }] },
-      { role: "model", parts: [{ text: "Hi! How can I help?" }] },
-      { role: "user", parts: [{ text: "What is your return policy?" }] },
+    expect(createResponse).toHaveBeenCalledOnce();
+    const request = createResponse.mock.calls[0][0];
+    expect(request.input).toEqual([
+      { role: "user", content: "Hi" },
+      { role: "assistant", content: "Hi! How can I help?" },
+      { role: "user", content: "What is your return policy?" },
     ]);
-    expect(request.config?.systemInstruction).toBe(SUPPORT_SYSTEM_INSTRUCTION);
+    expect(request.instructions).toBe(SUPPORT_SYSTEM_INSTRUCTION);
   });
 
-  it("rejects signed-out visitors with 401 without calling Gemini", async () => {
+  it("rejects signed-out visitors with 401 without calling OpenAI", async () => {
     signInAs(null);
 
     const response = await POST(
@@ -153,7 +181,7 @@ describe("POST /api/chat", () => {
     );
 
     expect(response.status).toBe(401);
-    expect(generateContent).not.toHaveBeenCalled();
+    expect(createResponse).not.toHaveBeenCalled();
   });
 
   it("rejects staff with 403, since tickets raised from chat belong to customers", async () => {
@@ -164,7 +192,7 @@ describe("POST /api/chat", () => {
     );
 
     expect(response.status).toBe(403);
-    expect(generateContent).not.toHaveBeenCalled();
+    expect(createResponse).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -181,19 +209,19 @@ describe("POST /api/chat", () => {
       "an over-long message",
       { messages: [{ role: "user", text: "x".repeat(4001) }] },
     ],
-  ])("rejects %s with 400 without calling Gemini", async (_, body) => {
+  ])("rejects %s with 400 without calling OpenAI", async (_, body) => {
     signInAs(customer);
 
     const response = await POST(chatRequest(body));
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: expect.any(String) });
-    expect(generateContent).not.toHaveBeenCalled();
+    expect(createResponse).not.toHaveBeenCalled();
   });
 
-  it("answers 502 with a customer-safe error when Gemini is unavailable", async () => {
+  it("answers 502 with a customer-safe error when OpenAI is unavailable", async () => {
     signInAs(customer);
-    generateContent.mockRejectedValue(
+    createResponse.mockRejectedValue(
       new Error("503 UNAVAILABLE: internal model overload details"),
     );
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -208,9 +236,9 @@ describe("POST /api/chat", () => {
     expect(error).not.toMatch(/overload/);
   });
 
-  it("answers 502 rather than an empty bubble when Gemini returns no text", async () => {
+  it("answers 502 rather than an empty bubble when OpenAI returns no text", async () => {
     signInAs(customer);
-    generateContent.mockResolvedValue(modelReply({ text: "" }));
+    createResponse.mockResolvedValue(modelReply({ text: "" }));
     vi.spyOn(console, "error").mockImplementation(() => {});
 
     const response = await POST(
@@ -220,9 +248,9 @@ describe("POST /api/chat", () => {
     expect(response.status).toBe(502);
   });
 
-  it("sends Gemini only the recent turns of a long conversation, opening on a customer turn", async () => {
+  it("sends OpenAI only the recent turns of a long conversation, opening on a customer turn", async () => {
     signInAs(customer);
-    generateContent.mockResolvedValue(modelReply({ text: "Sure." }));
+    createResponse.mockResolvedValue(modelReply({ text: "Sure." }));
     const turns = Array.from({ length: 25 }, (_, i) => ({
       role: i % 2 === 0 ? "user" : "model",
       text: `turn ${i + 1}`,
@@ -231,18 +259,18 @@ describe("POST /api/chat", () => {
     const response = await POST(chatRequest({ messages: turns }));
 
     expect(response.status).toBe(200);
-    const contents = generateContent.mock.calls[0][0].contents as unknown[];
+    const input = createResponse.mock.calls[0][0].input as unknown[];
     // The last 20 turns begin with model turn 6, which is dropped.
-    expect(contents).toHaveLength(19);
-    expect(contents[0]).toEqual({ role: "user", parts: [{ text: "turn 7" }] });
-    expect(contents[18]).toEqual({ role: "user", parts: [{ text: "turn 25" }] });
+    expect(input).toHaveLength(19);
+    expect(input[0]).toEqual({ role: "user", content: "turn 7" });
+    expect(input[18]).toEqual({ role: "user", content: "turn 25" });
   });
 });
 
 describe("POST /api/chat escalation", () => {
   it("creates an open ticket with the transcript when the model calls create_ticket", async () => {
     signInAs(customer);
-    generateContent
+    createResponse
       .mockResolvedValueOnce(modelReply(createTicketCall()))
       .mockImplementationOnce(async () => {
         const [ticket] = await allTickets();
@@ -283,20 +311,8 @@ describe("POST /api/chat escalation", () => {
       { senderType: "ai", senderId: null, content: `I've opened ticket #${ticket.id} for you.`, isInternal: false },
     ]);
 
-    // Gemini is told the new ticket's id so it can confirm it to the customer.
-    const toolTurn = generateContent.mock.calls[1][0].contents as Content[];
-    expect(toolTurn.at(-1)).toEqual({
-      role: "user",
-      parts: [
-        {
-          functionResponse: {
-            id: "call-1",
-            name: "create_ticket",
-            response: { output: { ticketId: ticket.id, status: "created" } },
-          },
-        },
-      ],
-    });
+    // The model is told the new ticket's id so it can confirm it to the customer.
+    expect(lastToolOutput(1)).toEqual({ ticketId: ticket.id, status: "created" });
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
@@ -307,7 +323,7 @@ describe("POST /api/chat escalation", () => {
 
   it("writes nothing and lets the model explain when its ticket details are invalid", async () => {
     signInAs(customer);
-    generateContent
+    createResponse
       .mockResolvedValueOnce(
         modelReply(createTicketCall({ ...ticketArgs, category: "billing" })),
       )
@@ -321,8 +337,7 @@ describe("POST /api/chat escalation", () => {
 
     expect(await allTickets()).toEqual([]);
     expect(await db.select().from(messages)).toEqual([]);
-    const toolTurn = generateContent.mock.calls[1][0].contents as Content[];
-    expect(toolTurn.at(-1)?.parts?.[0].functionResponse?.response).toEqual({
+    expect(lastToolOutput(1)).toEqual({
       error: expect.stringMatching(/category/),
     });
     expect(await response.json()).toEqual({
@@ -332,7 +347,7 @@ describe("POST /api/chat escalation", () => {
 
   it("opens only one ticket when the model calls create_ticket again in the same turn", async () => {
     signInAs(customer);
-    generateContent
+    createResponse
       .mockResolvedValueOnce(modelReply(createTicketCall()))
       .mockResolvedValueOnce(modelReply(createTicketCall()))
       .mockResolvedValueOnce(modelReply({ text: "Your ticket is open." }));
@@ -343,19 +358,16 @@ describe("POST /api/chat escalation", () => {
 
     const [ticket, ...others] = await allTickets();
     expect(others).toEqual([]);
-    const secondToolTurn = generateContent.mock.calls[2][0].contents as Content[];
-    expect(
-      secondToolTurn.at(-1)?.parts?.[0].functionResponse?.response,
-    ).toEqual({ output: { ticketId: ticket.id, status: "created" } });
+    expect(lastToolOutput(2)).toEqual({ ticketId: ticket.id, status: "created" });
     expect(await response.json()).toEqual({
       reply: "Your ticket is open.",
       ticket: { id: ticket.id },
     });
   });
 
-  it("still confirms the ticket when Gemini fails after creating it", async () => {
+  it("still confirms the ticket when OpenAI fails after creating it", async () => {
     signInAs(customer);
-    generateContent
+    createResponse
       .mockResolvedValueOnce(modelReply(createTicketCall()))
       .mockRejectedValueOnce(new Error("503 UNAVAILABLE"));
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -372,9 +384,9 @@ describe("POST /api/chat escalation", () => {
     expect(body.reply).toContain(`#${ticket.id}`);
   });
 
-  it("saves the whole conversation to the ticket, not just the turns sent to Gemini", async () => {
+  it("saves the whole conversation to the ticket, not just the turns sent to OpenAI", async () => {
     signInAs(customer);
-    generateContent
+    createResponse
       .mockResolvedValueOnce(modelReply(createTicketCall()))
       .mockResolvedValueOnce(modelReply({ text: "Ticket opened." }));
     const turns = Array.from({ length: 25 }, (_, i) => ({
@@ -394,7 +406,7 @@ describe("POST /api/chat escalation", () => {
 
 describe("POST /api/chat escalation emails", () => {
   function escalate() {
-    generateContent
+    createResponse
       .mockResolvedValueOnce(modelReply(createTicketCall()))
       .mockResolvedValueOnce(modelReply({ text: "Ticket opened." }));
     return POST(chatRequest({ messages: [{ role: "user", text: "I want a human" }] }));
@@ -444,7 +456,7 @@ describe("POST /api/chat escalation emails", () => {
 
   it("sends no email when the turn opens no ticket", async () => {
     signInAs(customer);
-    generateContent.mockResolvedValue(modelReply({ text: "Returns take 30 days." }));
+    createResponse.mockResolvedValue(modelReply({ text: "Returns take 30 days." }));
 
     await POST(chatRequest({ messages: [{ role: "user", text: "Return policy?" }] }));
     await runAfterResponse();
@@ -454,7 +466,7 @@ describe("POST /api/chat escalation emails", () => {
 
   it("sends one receipt and one alert when the model calls create_ticket twice in a turn", async () => {
     signInAs(customer);
-    generateContent
+    createResponse
       .mockResolvedValueOnce(modelReply(createTicketCall()))
       .mockResolvedValueOnce(modelReply(createTicketCall()))
       .mockResolvedValueOnce(modelReply({ text: "Your ticket is open." }));

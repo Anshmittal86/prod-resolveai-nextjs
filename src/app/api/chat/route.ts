@@ -4,13 +4,15 @@ import { parseChatRequest, type ChatResponse } from "@/lib/chat";
 import { sendAgentAlertEmail, sendTicketCreatedEmail } from "@/lib/email";
 import {
   CREATE_TICKET_TOOL,
-  getGeminiClient,
   parseCreateTicketArgs,
-  runConversation,
   type CreateTicketArgs,
+} from "@/lib/create-ticket-tool";
+import {
+  getOpenAIClient,
+  runConversation,
   type ToolCall,
   type ToolResult,
-} from "@/lib/gemini";
+} from "@/lib/openai";
 import { SUPPORT_SYSTEM_INSTRUCTION } from "@/lib/knowledge-base";
 import { AuthError, requireRole } from "@/lib/session";
 import { appendAiReply, createTicketFromChat } from "@/lib/tickets";
@@ -92,15 +94,15 @@ export async function POST(request: Request): Promise<Response> {
   let reply: string;
   try {
     const { text } = await runConversation({
-      ai: getGeminiClient(),
+      ai: getOpenAIClient(),
       history,
-      systemInstruction: SUPPORT_SYSTEM_INSTRUCTION,
+      instructions: SUPPORT_SYSTEM_INSTRUCTION,
       tools: [CREATE_TICKET_TOOL],
       onToolCall: handleToolCall,
     });
     reply = text.trim();
     // An empty answer (e.g. a blocked response) is no use to the customer.
-    if (!reply) throw new Error("Gemini returned an empty reply");
+    if (!reply) throw new Error("OpenAI returned an empty reply");
   } catch (error) {
     // Details stay in the server log; the customer gets a generic message.
     console.error("Chat turn failed", error);

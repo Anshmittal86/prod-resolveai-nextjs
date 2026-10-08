@@ -10,7 +10,8 @@ import {
   type TicketStatus,
 } from "@/db/schema";
 import { MAX_MESSAGE_LENGTH } from "./chat";
-import type { ChatTurn, CreateTicketArgs } from "./gemini";
+import type { ChatTurn } from "./chat";
+import type { CreateTicketArgs } from "./create-ticket-tool";
 
 export interface CreateTicketFromChatInput {
   customerId: string;

@@ -11,7 +11,7 @@ import {
   useState,
 } from "react";
 import { type ChatResponse, MAX_MESSAGE_LENGTH } from "@/lib/chat";
-import type { ChatTurn } from "@/lib/gemini";
+import type { ChatTurn } from "@/lib/chat";
 
 // ticketId marks the reply on which the AI escalated to a ticket.
 type ChatMessage = ChatTurn & { id: number; ticketId?: number };

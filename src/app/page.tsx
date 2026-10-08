@@ -457,7 +457,7 @@ function ForTeams() {
 
 const STACK = [
   ["Application", "Next.js 16 and React 19", "Server-rendered pages and Server Actions"],
-  ["Assistant", "Google Gemini", "Function calling for create_ticket"],
+  ["Assistant", "OpenAI", "Function calling for create_ticket"],
   ["Data", "PostgreSQL on Neon", "Drizzle ORM and versioned migrations"],
   ["Accounts", "Better Auth", "Email and password, three roles"],
   ["Email", "Resend", "Transactional notifications"],

@@ -1,10 +1,14 @@
-import type { ChatTurn } from "./gemini";
-
 // Shared by the chat route and the chat UI, so it must stay client-safe.
+
+/** One message of a support chat; "model" is the AI assistant. */
+export interface ChatTurn {
+  role: "user" | "model";
+  text: string;
+}
 
 export const MAX_MESSAGE_LENGTH = 4000;
 
-// Only the most recent turns go to Gemini, bounding the cost of long chats.
+// Only the most recent turns go to the model, bounding the cost of long chats.
 const MAX_HISTORY_TURNS = 20;
 
 // A successful /api/chat response. `ticket` is set on the turn where the AI
@@ -16,12 +20,18 @@ export interface ChatResponse {
 
 export type ChatRequestResult =
   // `transcript` is the whole chat (saved on escalation); `history` is the
-  // recent slice sent to Gemini.
+  // recent slice sent to the model.
   | { ok: true; transcript: ChatTurn[]; history: ChatTurn[] }
   | { ok: false; error: string };
 
-// The request body is untrusted: the client owns the transcript until ticket
-// escalation persists it, so every turn is checked before reaching Gemini.
+/**
+ * Validates an /api/chat request body. The body is untrusted: the client owns
+ * the transcript until escalation persists it, so every turn is checked.
+ *
+ * @param body The parsed JSON request body.
+ * @returns The full transcript and the recent history to send to the model,
+ *   or a customer-facing error.
+ */
 export function parseChatRequest(body: unknown): ChatRequestResult {
   const messages = (body as { messages?: unknown } | null)?.messages;
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -50,8 +60,8 @@ export function parseChatRequest(body: unknown): ChatRequestResult {
     return { ok: false, error: "The last message must be from the customer." };
   }
 
-  // Gemini expects a conversation to open with a user turn, so a trimmed
-  // history that would start mid-exchange drops its leading model turns.
+  // A trimmed history that would start mid-exchange drops its leading model
+  // turns, so the model never sees a reply without the question it answered.
   const recent = transcript.slice(-MAX_HISTORY_TURNS);
   const firstUserTurn = recent.findIndex((turn) => turn.role === "user");
   return { ok: true, transcript, history: recent.slice(firstUserTurn) };

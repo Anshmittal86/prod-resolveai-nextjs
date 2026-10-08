@@ -1,7 +1,7 @@
 # ResolveAI
 
 AI-first customer support and ticketing. Customers chat with an AI assistant
-(Google Gemini) that answers routine questions straight away and, when a human
+(OpenAI) that answers routine questions straight away and, when a human
 is needed, opens a support ticket for them. Support staff triage those tickets
 from a dashboard, reply to customers, leave internal notes and move tickets
 through their lifecycle.
@@ -11,7 +11,7 @@ through their lifecycle.
 - Next.js 16 (App Router, Server Actions) with React 19 and Tailwind CSS v4
 - PostgreSQL on Neon, via Drizzle ORM
 - Better Auth (email and password) with `customer`, `agent` and `admin` roles
-- Google Gemini (`@google/genai`) with a `create_ticket` tool for escalation
+- OpenAI Responses API (`openai`) with a `create_ticket` tool for escalation
 - Resend for transactional email
 - Vitest for tests
 
@@ -33,7 +33,7 @@ Copy `.env.example` to `.env` and fill it in:
 | `BETTER_AUTH_SECRET` | Random secret of at least 32 characters |
 | `BETTER_AUTH_URL` | The app's URL, `http://localhost:3000` in development |
 | `NEXT_PUBLIC_APP_URL` | Base URL for links in emails, usually the same as `BETTER_AUTH_URL` |
-| `GEMINI_API_KEY` | Google Gemini API key (`GEMINI_MODEL` is optional) |
+| `OPENAI_API_KEY` | OpenAI API key (`OPENAI_MODEL` is optional, defaults to `gpt-6-astra`) |
 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Resend key and sender address (optional; without them emails are skipped and logged) |
 | `SUPPORT_TEAM_EMAIL` | Inbox that receives new-ticket alerts (optional) |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | The staff account created by `npm run db:seed` |

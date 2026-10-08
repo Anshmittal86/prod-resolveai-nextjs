@@ -9,7 +9,7 @@
 - **Chat Session**: Active real-time interaction between a Customer and the AI Assistant on the customer portal. Persisted in the database.
 - **Message**: Individual communication unit within a Chat Session or Ticket Thread. Can have `senderType`: `customer`, `ai`, `agent`, or `system`.
 - **Internal Note**: A message created by an Agent on a ticket with `isInternal = true`. Visible exclusively to Agents and Admins, completely hidden from the Customer.
-- **AI Assistant**: First-responder automated agent powered by Google Gemini (`@google/genai`). Configured with system instructions and company policies/FAQs to resolve standard inquiries.
+- **AI Assistant**: First-responder automated agent powered by OpenAI (`openai`, Responses API). Configured with system instructions and company policies/FAQs to resolve standard inquiries.
 - **Escalation & Tool Calling**: When the AI encounters a critical issue, customer dissatisfaction, or explicit request for a human, it invokes the `create_ticket` function tool.
 - **Ticket**: Formal support request tracked in the system. Holds metadata (category, priority, status, assigned agent, escalation reason). Linked to customer and message history.
 - **Ticket Status**:
@@ -33,7 +33,7 @@
   - Standard user login & registration: `/login`, `/register`.
   - Discreet staff login: `/admin/login`.
   - Roles: `customer`, `agent`, `admin`.
-- **AI Engine**: Google Gemini (`@google/genai`) using function calling / tool use (`create_ticket`). Grounded with structured company policies and FAQs.
+- **AI Engine**: OpenAI Responses API (`openai`) using function calling / tool use (`create_ticket`). Grounded with structured company policies and FAQs.
 - **Email Service**: Resend (`resend`) for transactional support emails.
 
 ---
@@ -64,7 +64,7 @@
 │   │   │       └── [id]/page.tsx      ← Agent Ticket View, Notes & Replies
 │   │   ├── api/
 │   │   │   ├── auth/[...all]/route.ts ← Better Auth Handler
-│   │   │   ├── chat/route.ts          ← AI Chat Endpoint (Gemini + Tools)
+│   │   │   ├── chat/route.ts          ← AI Chat Endpoint (OpenAI + Tools)
 │   │   │   └── tickets/route.ts
 │   │   ├── layout.tsx
 │   │   └── globals.css
@@ -76,7 +76,8 @@
 │   ├── lib/
 │   │   ├── auth.ts                    ← Better Auth configuration
 │   │   ├── auth-client.ts             ← Better Auth React client
-│   │   ├── gemini.ts                  ← Gemini AI client & tool handlers
+│   │   ├── openai.ts                  ← OpenAI client & tool-call loop
+│   │   ├── create-ticket-tool.ts      ← create_ticket schema & argument validation
 │   │   ├── email.ts                   ← Resend email templates & dispatcher
 │   │   └── knowledge-base.ts          ← Configurable system prompt & FAQs
 │   └── types/
@@ -95,7 +96,7 @@
    - If resolvable, AI answers directly with immediate guidance.
 2. **AI Escalation & Function Calling**:
    - When query requires human intervention (e.g. payment failed, refund approval, or user requests human):
-   - Gemini triggers tool call: `create_ticket({ subject, category, priority, escalationReason })`.
+   - The model triggers tool call: `create_ticket({ subject, category, priority, escalationReason })`.
    - Backend executes tool:
      - Persists new `Ticket` linked to customer.
      - Saves chat messages into ticket history.
