@@ -261,12 +261,21 @@
     animation: loader-fill 2s var(--ease-smooth) infinite;
   }
 
+  .loader-lens,
   .loader-check {
-    stroke: var(--color-accent);
-    stroke-width: 3.6;
+    fill: none;
+    stroke: var(--color-on-ink);
+    stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-dasharray: 100;
+  }
+
+  .loader-lens {
+    animation: loader-lens 2s var(--ease-smooth) infinite;
+  }
+
+  .loader-check {
     animation: loader-check 2s var(--ease-smooth) infinite;
   }
 
@@ -319,12 +328,23 @@
   }
 }
 
-@keyframes loader-check {
+@keyframes loader-lens {
   0%,
-  40% {
+  38% {
     stroke-dashoffset: 100;
   }
-  65%,
+  58%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes loader-check {
+  0%,
+  55% {
+    stroke-dashoffset: 100;
+  }
+  72%,
   100% {
     stroke-dashoffset: 0;
   }
@@ -356,11 +376,13 @@
   .loader-mark,
   .loader-outline,
   .loader-fill,
+  .loader-lens,
   .loader-check {
     animation: none;
   }
 
   .loader-outline,
+  .loader-lens,
   .loader-check {
     stroke-dashoffset: 0;
   }
