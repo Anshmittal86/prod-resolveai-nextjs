@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: { template: "%s | ResolveAI", default: "ResolveAI" },
   description: "AI-first customer support and ticketing",
+  // Rendered as <meta name="apple-mobile-web-app-title">, the home-screen
+  // label on iOS.
+  appleWebApp: { title: "ResolveAI" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
